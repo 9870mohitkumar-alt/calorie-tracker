@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#7c6aff"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CalTracker"/>
+<link rel="manifest" href="manifest.json"/>
+<title>Mohit's Calorie Tracker</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0d0d1a;--card:#12102a;--card2:#1a1030;--border:#2a2a4a;
+    --purple:#7c6aff;--lpurple:#c8b4ff;--text:#e8e8ff;--dim:#6060a0;--mid:#a0a0c0;
+    --green:#4ade80;--red:#f87171;--yellow:#f59e0b;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
+    min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:90px;
+    overscroll-behavior:none;}
+  button{font-family:inherit;cursor:pointer;border:none;transition:all .2s}
+  input{font-family:inherit;outline:none}
+
+  /* HEADER */
+  #header{background:linear-gradient(135deg,#1a0a2e,#0d1a2e);padding:20px 18px 14px;
+    border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  #header .sub{font-size:10px;color:var(--dim);letter-spacing:3px;margin-bottom:2px}
+  #header h1{font-size:21px;font-weight:900;color:var(--lpurple);letter-spacing:-0.5px}
+  #header .goal{font-size:11px;color:var(--dim);margin-top:2px}
+
+  /* METER */
+  #meter{margin:16px 16px 0;background:linear-gradient(135deg,var(--card),var(--card2));
+    border:1px solid var(--border);border-radius:16px;padding:18px}
+  #big-cal{font-size:48px;font-weight:900;color:var(--lpurple);line-height:1;text-align:center}
+  #cal-label{font-size:11px;color:var(--dim);letter-spacing:2px;text-align:center;margin-bottom:10px}
+  #progress-bar{height:8px;background:#1e1e3a;border-radius:99px;overflow:hidden;margin-bottom:8px}
+  #progress-fill{height:100%;border-radius:99px;transition:width .5s ease;width:0%}
+  #cal-status{text-align:center;font-size:13px;min-height:20px}
+  #rings{display:flex;justify-content:space-around;padding-top:12px;border-top:1px solid var(--border);margin-top:4px}
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .ring-label{font-size:10px;color:var(--mid);text-align:center}
+  .ring-val{font-size:9px;text-align:center}
+
+  /* TABS */
+  #tabs{display:flex;padding:14px 16px 0;gap:6px}
+  .tab{flex:1;padding:8px 2px;border-radius:8px;border:1px solid var(--border);
+    background:transparent;color:var(--dim);font-size:10px;letter-spacing:.5px;
+    font-family:monospace;font-weight:400;transition:all .2s;white-space:nowrap}
+  .tab.active{border-color:var(--purple);background:#1a1040;color:var(--lpurple);font-weight:700}
+
+  /* CONTENT */
+  #content{padding:14px 16px}
+
+  /* CARDS */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+  .card-title{font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+
+  /* SEARCH */
+  #search-input{width:100%;padding:12px 14px;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;color:var(--text);font-size:13px;margin-bottom:10px}
+  #search-results{background:var(--card);border:1px solid var(--border);border-radius:10px;
+    overflow:hidden;max-height:220px;overflow-y:auto;margin-bottom:10px;display:none}
+  .food-item{padding:11px 14px;border-bottom:1px solid #1e1e3a;display:flex;
+    justify-content:space-between;align-items:center;cursor:pointer}
+  .food-item:active{background:#1a1040}
+  .food-name{font-size:12px;color:var(--text)}
+  .food-macro{font-size:10px;color:var(--dim);margin-top:2px}
+  .food-cal{font-size:14px;font-weight:700;color:var(--lpurple)}
+
+  /* SELECTED FOOD */
+  #selected-card{background:#1a1040;border:1px solid var(--purple);border-radius:10px;
+    padding:14px;margin-bottom:10px;display:none}
+  #sel-name{font-size:12px;color:var(--lpurple);font-weight:700;margin-bottom:6px}
+  #sel-macro{font-size:11px;color:var(--mid);margin-bottom:12px}
+  #qty-row{display:flex;align-items:center;gap:10px}
+  .qty-btn{background:#2a2a4a;color:var(--text);width:32px;height:32px;border-radius:7px;
+    font-size:18px;display:flex;align-items:center;justify-content:center}
+  #qty-display{font-size:14px;font-weight:700;color:var(--lpurple);min-width:30px;text-align:center}
+  #qty-total{font-size:12px;color:var(--yellow);margin-left:auto}
+
+  /* BUTTONS */
+  .btn-primary{width:100%;padding:14px;border-radius:10px;
+    background:linear-gradient(135deg,var(--purple),var(--lpurple));
+    color:#0d0d1a;font-size:14px;font-weight:900;letter-spacing:1px;margin-top:4px}
+  .btn-primary:disabled{background:#1e1e3a;color:#3a3a5a;cursor:not-allowed}
+  .btn-secondary{padding:10px;border-radius:8px;border:1px solid var(--border);
+    background:transparent;color:var(--dim);font-size:12px;font-family:monospace}
+
+  /* LOG ITEMS */
+  .log-item{background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .log-name{font-size:12px;color:var(--text)}
+  .log-macro{font-size:10px;color:var(--dim);margin-top:2px}
+  .log-cal{font-size:14px;font-weight:700;color:var(--lpurple);margin-right:8px}
+  .log-del{background:transparent;color:var(--dim);font-size:16px;padding:4px}
+  .log-total{background:linear-gradient(135deg,#1a1040,#0d1a2e);border:1px solid var(--purple);
+    border-radius:10px;padding:14px;display:flex;justify-content:space-between;margin-top:4px}
+
+  /* SCAN */
+  #upload-zone{border:2px dashed var(--border);border-radius:14px;min-height:160px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    background:var(--card);overflow:hidden;position:relative;margin-bottom:12px;transition:border-color .2s}
+  #upload-zone.has-image{border-color:var(--purple)}
+  #upload-zone img{width:100%;max-height:240px;object-fit:cover;display:block}
+  #upload-placeholder{text-align:center;padding:24px}
+  #upload-placeholder .icon{font-size:36px;margin-bottom:10px}
+  #upload-placeholder .title{font-size:13px;color:var(--lpurple);font-weight:700}
+  #upload-placeholder .sub{font-size:11px;color:var(--dim);margin-top:6px}
+
+  #scan-btns{display:flex;gap:8px;margin-bottom:12px}
+  #analyze-btn{flex:2;padding:12px;border-radius:8px;
+    background:linear-gradient(135deg,var(--purple),var(--lpurple));
+    color:#0d0d1a;font-size:13px;font-weight:900;font-family:monospace;letter-spacing:1px}
+  #analyze-btn:disabled{background:#1e1e3a;color:#3a3a5a;cursor:not-allowed}
+
+  /* LOADING */
+  #scan-loading{background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:20px;text-align:center;display:none;margin-bottom:12px}
+  .loading-bar{height:4px;background:#1e1e3a;border-radius:99px;overflow:hidden;margin-top:14px}
+  .loading-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--purple),var(--lpurple));
+    animation:slide 1.5s ease-in-out infinite}
+  @keyframes slide{0%{width:20%;margin-left:0}50%{width:50%;margin-left:30%}100%{width:20%;margin-left:80%}}
+
+  /* RESULT */
+  #scan-result{display:none}
+  #result-header{background:linear-gradient(135deg,#1a1040,#0d1a2e);border:1px solid var(--purple);
+    border-radius:12px;padding:15px;margin-bottom:10px}
+  .result-meal{font-size:15px;font-weight:900;color:var(--lpurple)}
+  .confidence-badge{font-size:9px;padding:3px 8px;border-radius:99px;font-weight:700;letter-spacing:1px}
+  .conf-high{background:#4ade8022;color:#4ade80;border:1px solid #4ade8044}
+  .conf-medium{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44}
+  .conf-low{background:#f8717122;color:#f87171;border:1px solid #f8717144}
+  .totals-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;
+    margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+  .total-item{text-align:center}
+  .total-num{font-size:16px;font-weight:900}
+  .total-lbl{font-size:8px;color:var(--dim);letter-spacing:1px}
+  #result-note{background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:11px;font-size:12px;color:var(--mid);line-height:1.5;margin-bottom:10px}
+  .result-item{background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;
+    transition:border-color .3s}
+  .result-item.added{border-color:var(--green)}
+  .ri-name{font-size:12px;color:var(--text);font-weight:700}
+  .ri-qty{font-size:10px;color:var(--dim)}
+  .ri-macro{font-size:10px;color:var(--mid);margin-top:2px}
+  .ri-right{display:flex;align-items:center;gap:8px;margin-left:10px;flex-shrink:0}
+  .ri-cal{font-size:14px;font-weight:900;color:var(--lpurple)}
+  .add-item-btn{padding:6px 10px;border-radius:6px;background:#1a1040;
+    color:var(--lpurple);font-size:11px;font-family:monospace;font-weight:700;border:none}
+  .add-item-btn.done{background:#1a3a1a;color:var(--green)}
+  #add-all-btn{width:100%;padding:14px;border-radius:10px;
+    background:linear-gradient(135deg,var(--purple),var(--lpurple));
+    color:#0d0d1a;font-size:14px;font-weight:900;font-family:monospace;
+    letter-spacing:1px;margin-top:4px;margin-bottom:10px}
+  #all-done{background:#1a3a1a;border:1px solid var(--green);border-radius:10px;
+    padding:14px;text-align:center;font-size:13px;color:var(--green);font-weight:700;
+    display:none;margin-bottom:10px}
+
+  /* SETTINGS */
+  #api-input{width:100%;padding:11px 13px;background:#0a0818;border:1px solid var(--border);
+    border-radius:8px;color:var(--text);font-size:12px;margin-bottom:8px;
+    font-family:monospace}
+  .settings-row{display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--border)}
+  .settings-label{font-size:12px;color:var(--mid)}
+  .settings-val{font-size:12px;color:var(--lpurple);font-weight:700}
+
+  /* ADVICE */
+  .advice-item{padding:10px 0;border-bottom:1px solid #1e1e3a;font-size:12px;
+    color:var(--lpurple);line-height:1.5}
+  .advice-item:last-child{border-bottom:none}
+  .tip-item{padding:8px 0;border-bottom:1px solid #1e1e3a;font-size:11px;
+    color:var(--mid);line-height:1.5}
+  .tip-item:last-child{border-bottom:none}
+  .stat-row{display:flex;justify-content:space-between;margin-bottom:7px}
+  .stat-label{font-size:12px;color:var(--mid)}
+  .stat-val{font-size:12px;font-weight:700}
+
+  /* EMPTY STATE */
+  .empty{text-align:center;padding:40px 20px;color:#3a3a5a}
+  .empty .emoji{font-size:32px;margin-bottom:8px}
+  .empty p{font-size:13px}
+  .empty small{font-size:11px;margin-top:4px;display:block}
+
+  /* ERROR */
+  .error-box{background:#2a1010;border:1px solid var(--red);border-radius:10px;
+    padding:13px;font-size:12px;color:var(--red);margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="sub">WEIGHT GAIN TRACKER</div>
+  <h1>Mohit's Calorie Log</h1>
+  <div class="goal">🎯 Goal: 2800 kcal/day • Target: +10 kg</div>
+</div>
+
+<!-- CALORIE METER -->
+<div id="meter">
+  <div id="big-cal">0</div>
+  <div id="cal-label">KCAL CONSUMED</div>
+  <div id="progress-bar"><div id="progress-fill"></div></div>
+  <div id="cal-status"></div>
+  <div id="rings"></div>
+</div>
+
+<!-- TABS -->
+<div id="tabs">
+  <button class="tab active" data-tab="scan">📷 Scan</button>
+  <button class="tab" data-tab="add">🍽 Add</button>
+  <button class="tab" data-tab="log">📋 Log</button>
+  <button class="tab" data-tab="advice">💡 Advice</button>
+  <button class="tab" data-tab="settings">⚙️</button>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+  <!-- SCAN TAB -->
+  <div id="tab-scan">
+    <div id="upload-zone">
+      <div id="upload-placeholder">
+        <div class="icon">📸</div>
+        <div class="title">Meal ki photo daalo</div>
+        <div class="sub">Tap karke gallery se choose karo<br>ya camera use karo</div>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none"/>
+
+    <div id="scan-btns" style="display:none">
+      <button class="btn-secondary" id="change-photo-btn">🔄 Change</button>
+      <button id="analyze-btn">🔍 ANALYZE KARO</button>
+    </div>
+
+    <div id="scan-loading">
+      <div style="font-size:26px;margin-bottom:8px">🔬</div>
+      <div style="font-size:12px;color:var(--lpurple)">Claude photo analyze kar raha hai...</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px">Har item identify karke nutrition calculate ho raha hai</div>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+    <div id="scan-error" class="error-box" style="display:none"></div>
+    <div id="scan-result">
+      <div id="result-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div>
+            <div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:3px">MEAL DETECTED</div>
+            <div class="result-meal" id="result-meal-name"></div>
+          </div>
+          <div class="confidence-badge" id="conf-badge"></div>
+        </div>
+        <div class="totals-grid">
+          <div class="total-item"><div class="total-num" id="t-cal" style="color:var(--lpurple)"></div><div class="total-lbl">KCAL</div></div>
+          <div class="total-item"><div class="total-num" id="t-pro" style="color:var(--purple)"></div><div class="total-lbl">PROTEIN</div></div>
+          <div class="total-item"><div class="total-num" id="t-carb" style="color:#a78bfa"></div><div class="total-lbl">CARBS</div></div>
+          <div class="total-item"><div class="total-num" id="t-fat" style="color:var(--yellow)"></div><div class="total-lbl">FAT</div></div>
+        </div>
+      </div>
+      <div id="result-note"></div>
+      <div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:8px">ITEMS FOUND</div>
+      <div id="result-items"></div>
+      <button id="add-all-btn" style="display:none"></button>
+      <div id="all-done">✅ Sab items log ho gaye!</div>
+    </div>
+    <div id="no-api-warn" class="error-box" style="display:none">
+      ⚙️ Pehle Settings mein Anthropic API Key daalo, tabhi photo scan hogi.
+    </div>
+  </div>
+
+  <!-- ADD TAB -->
+  <div id="tab-add" style="display:none">
+    <input type="search" id="search-input" placeholder="Khaana search karo... (roti, dal, egg)"/>
+    <div id="search-results"></div>
+    <div id="selected-card">
+      <div id="sel-name"></div>
+      <div id="sel-macro"></div>
+      <div id="qty-row">
+        <span style="font-size:11px;color:var(--dim)">Qty:</span>
+        <button class="qty-btn" id="qty-minus">−</button>
+        <div id="qty-display">1</div>
+        <button class="qty-btn" id="qty-plus">+</button>
+        <div id="qty-total"></div>
+      </div>
+    </div>
+    <button class="btn-primary" id="log-btn" disabled>➕ LOG KARO</button>
+  </div>
+
+  <!-- LOG TAB -->
+  <div id="tab-log" style="display:none">
+    <div id="log-empty" class="empty">
+      <div class="emoji">🍽</div>
+      <p>Abhi kuch log nahi kiya</p>
+      <small>Scan ya Add tab use karo</small>
+    </div>
+    <div id="log-items"></div>
+    <div id="log-total" style="display:none" class="log-total">
+      <div style="font-size:11px;color:var(--dim)">TOTAL</div>
+      <div id="log-total-val" style="font-size:16px;font-weight:900;color:var(--lpurple)"></div>
+    </div>
+    <button id="clear-log-btn" class="btn-secondary" style="width:100%;margin-top:10px;display:none">🗑 Sab clear karo</button>
+  </div>
+
+  <!-- ADVICE TAB -->
+  <div id="tab-advice" style="display:none">
+    <div class="card">
+      <div class="card-title">ABTK STATUS</div>
+      <div class="stat-row"><span class="stat-label">Calories</span><span class="stat-val" id="adv-cal"></span></div>
+      <div class="stat-row"><span class="stat-label">Protein</span><span class="stat-val" id="adv-pro"></span></div>
+      <div class="stat-row"><span class="stat-label">Bacha hai</span><span class="stat-val" id="adv-rem"></span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">CLAUDE KI SALAH</div>
+      <div id="advice-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">WEIGHT GAIN RULES</div>
+      <div class="tip-item">💧 Din mein 2.5-3L paani peeyo</div>
+      <div class="tip-item">🕐 Har 2-3 ghante mein kuch khao</div>
+      <div class="tip-item">🥛 Roz ek glass banana-milk shake peeyo</div>
+      <div class="tip-item">💪 Gym karo toh protein aur badhao</div>
+      <div class="tip-item">😴 7-8 ghante ki neend zaruri hai growth ke liye</div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="tab-settings" style="display:none">
+    <div class="card">
+      <div class="card-title">API KEY (PHOTO SCAN KE LIYE)</div>
+      <div style="font-size:11px;color:var(--mid);margin-bottom:10px;line-height:1.6">
+        Photo scan feature ke liye free Anthropic API key chahiye.<br>
+        👉 <a href="https://console.anthropic.com" target="_blank" style="color:var(--lpurple)">console.anthropic.com</a> pe jaake free account banao aur key copy karo.
+      </div>
+      <input type="password" id="api-input" placeholder="sk-ant-api03-..."/>
+      <button class="btn-primary" id="save-api-btn">💾 SAVE KEY</button>
+      <div id="api-status" style="font-size:11px;text-align:center;margin-top:8px;min-height:16px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">GOALS</div>
+      <div class="settings-row"><span class="settings-label">Daily Calories</span><span class="settings-val">2800 kcal</span></div>
+      <div class="settings-row"><span class="settings-label">Protein Goal</span><span class="settings-val">100g</span></div>
+      <div class="settings-row"><span class="settings-label">Carbs Goal</span><span class="settings-val">380g</span></div>
+      <div class="settings-row"><span class="settings-label">Fat Goal</span><span class="settings-val">80g</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">APP INFO</div>
+      <div class="settings-row"><span class="settings-label">Version</span><span class="settings-val">1.0.0</span></div>
+      <div class="settings-row"><span class="settings-label">Name</span><span class="settings-val">Mohit's CalTracker</span></div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+const GOALS = { cal: 2800, protein: 100, carbs: 380, fat: 80 };
+const FOODS = [
+  {name:"Roti (1 piece)",cal:70,protein:2.5,carbs:14,fat:1},
+  {name:"Chawal (1 katori)",cal:130,protein:2.7,carbs:28,fat:0.3},
+  {name:"Dal (1 katori)",cal:100,protein:7,carbs:15,fat:1.5},
+  {name:"Paneer (100g)",cal:265,protein:18,carbs:3,fat:20},
+  {name:"Doodh / Milk (1 glass)",cal:120,protein:6,carbs:10,fat:5},
+  {name:"Anda / Egg (1)",cal:78,protein:6,carbs:0.6,fat:5},
+  {name:"Banana (1)",cal:90,protein:1.1,carbs:23,fat:0.3},
+  {name:"Moong Dal sprouted (100g)",cal:47,protein:4,carbs:7,fat:0.2},
+  {name:"Peanut Butter (1 tbsp)",cal:95,protein:4,carbs:3,fat:8},
+  {name:"Poha (1 plate)",cal:200,protein:4,carbs:40,fat:3},
+  {name:"Sabzi (1 katori)",cal:80,protein:2,carbs:10,fat:3},
+  {name:"Dahi / Curd (1 katori)",cal:100,protein:5,carbs:8,fat:4},
+  {name:"Chicken boiled (100g)",cal:165,protein:31,carbs:0,fat:3.6},
+  {name:"Rajma (1 katori)",cal:150,protein:9,carbs:25,fat:1},
+  {name:"Aloo (1 medium)",cal:100,protein:2,carbs:22,fat:0.1},
+  {name:"Bread (1 slice)",cal:70,protein:2.5,carbs:13,fat:1},
+  {name:"Mango (1 medium)",cal:130,protein:1,carbs:32,fat:0.5},
+  {name:"Oats (50g)",cal:180,protein:6,carbs:30,fat:4},
+  {name:"Chana (1 katori)",cal:165,protein:11,carbs:27,fat:2},
+  {name:"Ghee (1 tsp)",cal:45,protein:0,carbs:0,fat:5},
+  {name:"Idli (2 pieces)",cal:130,protein:4,carbs:26,fat:0.5},
+  {name:"Sambar (1 katori)",cal:90,protein:4,carbs:14,fat:2},
+  {name:"Chole (1 katori)",cal:180,protein:10,carbs:28,fat:4},
+  {name:"Paratha plain (1)",cal:150,protein:3,carbs:25,fat:5},
+  {name:"Paratha aloo (1)",cal:200,protein:4,carbs:32,fat:7},
+  {name:"Lassi meethi (1 glass)",cal:160,protein:6,carbs:26,fat:4},
+  {name:"Pav Bhaji (1 plate)",cal:380,protein:9,carbs:60,fat:12},
+  {name:"Maggi noodles (1 packet)",cal:350,protein:7,carbs:50,fat:14},
+  {name:"Upma (1 plate)",cal:220,protein:5,carbs:40,fat:5},
+  {name:"Besan chilla (1)",cal:130,protein:7,carbs:18,fat:4},
+];
+
+const ADVICE = {
+  low:["🍌 Banana + Milk shake lo — fast 210 kcal milega","🥜 2 tbsp Peanut Butter roti ke saath kha lo","🍚 Ek extra katori chawal khao dinner mein","🥚 2 boiled eggs evening snack mein kha sakte ho","🧆 Moong sprouts + paneer ka snack try karo"],
+  mid:["👍 Acha chal raha hai! Dinner mein thoda ghee daalein","🥛 Sone se pehle ek glass doodh zaroor peeyo","🫘 Rajma ya chana dinner mein rakho protein ke liye"],
+  good:["🔥 Bahut badhiya! Target ke kaafi paas ho","💪 Protein pe dhyan rakho — goal hai 100g","✅ Aaj ka din solid raha, kal bhi aise karo"]
+};
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let foodLog = JSON.parse(localStorage.getItem("calLog") || "[]");
+let selectedFood = null;
+let qty = 1;
+let imageBase64 = null;
+let scanResult = null;
+let addedScanIds = new Set();
+
+function saveLog() { localStorage.setItem("calLog", JSON.stringify(foodLog)); }
+
+function getTotals() {
+  return foodLog.reduce((a,i) => ({
+    cal: a.cal + i.cal * i.qty,
+    protein: a.protein + i.protein * i.qty,
+    carbs: a.carbs + i.carbs * i.qty,
+    fat: a.fat + i.fat * i.qty,
+  }), {cal:0,protein:0,carbs:0,fat:0});
+}
+
+// ── METER ───────────────────────────────────────────────────────────────────
+function updateMeter() {
+  const t = getTotals();
+  const pct = Math.min(t.cal / GOALS.cal, 1);
+  const remaining = GOALS.cal - t.cal;
+
+  document.getElementById("big-cal").textContent = Math.round(t.cal);
+  const fill = document.getElementById("progress-fill");
+  fill.style.width = (pct * 100) + "%";
+  if (pct >= 1) fill.style.background = "#4ade80";
+  else if (pct > 0.5) fill.style.background = "linear-gradient(90deg,#c8b4ff,#7c6aff)";
+  else fill.style.background = "linear-gradient(90deg,#f87171,#c8b4ff)";
+
+  const status = document.getElementById("cal-status");
+  if (remaining > 0) status.innerHTML = `<span style="color:#f87171">⚠️ ${Math.round(remaining)} kcal aur chahiye</span>`;
+  else status.innerHTML = `<span style="color:#4ade80">✅ Target reach kar liya!</span>`;
+
+  // Rings
+  const rings = [
+    {label:"Protein",val:Math.round(t.protein),max:GOALS.protein,color:"#7c6aff"},
+    {label:"Carbs",val:Math.round(t.carbs),max:GOALS.carbs,color:"#c8b4ff"},
+    {label:"Fat",val:Math.round(t.fat),max:GOALS.fat,color:"#f59e0b"},
+  ];
+  document.getElementById("rings").innerHTML = rings.map(r => {
+    const p = Math.min(r.val/r.max,1);
+    const circ = 2*Math.PI*28;
+    const dash = p*circ;
+    return `<div class="ring-wrap">
+      <svg width="70" height="70" style="transform:rotate(-90deg)">
+        <circle cx="35" cy="35" r="28" fill="none" stroke="#1e1e2e" stroke-width="7"/>
+        <circle cx="35" cy="35" r="28" fill="none" stroke="${r.color}" stroke-width="7"
+          stroke-dasharray="${dash} ${circ}" stroke-linecap="round"/>
+        <text x="35" y="39" text-anchor="middle" fill="${r.color}" font-size="11" font-weight="700"
+          style="transform:rotate(90deg);transform-origin:35px 35px">${Math.round(p*100)}%</text>
+      </svg>
+      <div class="ring-label">${r.label}</div>
+      <div class="ring-val" style="color:${r.color}">${r.val}g / ${r.max}g</div>
+    </div>`;
+  }).join("");
+
+  // Advice tab
+  const t2 = getTotals();
+  const p2 = Math.min(t2.cal/GOALS.cal,1);
+  document.getElementById("adv-cal").textContent = `${Math.round(t2.cal)} / ${GOALS.cal}`;
+  document.getElementById("adv-cal").style.color = p2>=1?"#4ade80":"#f87171";
+  document.getElementById("adv-pro").textContent = `${Math.round(t2.protein)}g / ${GOALS.protein}g`;
+  document.getElementById("adv-pro").style.color = t2.protein>=GOALS.protein?"#4ade80":"#f87171";
+  const rem2 = GOALS.cal - t2.cal;
+  document.getElementById("adv-rem").textContent = rem2>0?`${Math.round(rem2)} kcal`:"Goal done! 🎉";
+  document.getElementById("adv-rem").style.color = rem2<=0?"#4ade80":"#f59e0b";
+
+  const adv = p2<0.4?ADVICE.low:p2<0.75?ADVICE.mid:ADVICE.good;
+  document.getElementById("advice-list").innerHTML = adv.map(a=>`<div class="advice-item">${a}</div>`).join("");
+}
+
+// ── TABS ────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const t = btn.dataset.tab;
+    ["scan","add","log","advice","settings"].forEach(id => {
+      document.getElementById("tab-"+id).style.display = id===t?"block":"none";
+    });
+    if (t==="log") renderLog();
+    if (t==="advice") updateMeter();
+  });
+});
+
+// ── ADD TAB ─────────────────────────────────────────────────────────────────
+const searchInput = document.getElementById("search-input");
+const searchResults = document.getElementById("search-results");
+const selectedCard = document.getElementById("selected-card");
+const logBtn = document.getElementById("log-btn");
+
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.trim().toLowerCase();
+  selectedFood = null;
+  selectedCard.style.display = "none";
+  logBtn.disabled = true;
+  if (!q) { searchResults.style.display = "none"; return; }
+  const matches = FOODS.filter(f => f.name.toLowerCase().includes(q));
+  if (!matches.length) {
+    searchResults.innerHTML = `<div style="padding:14px;color:var(--dim);font-size:12px">Kuch nahi mila 😕</div>`;
+  } else {
+    searchResults.innerHTML = matches.map((f,i) =>
+      `<div class="food-item" data-idx="${i}" data-name="${f.name}">
+        <div><div class="food-name">${f.name}</div><div class="food-macro">P:${f.protein}g • C:${f.carbs}g • F:${f.fat}g</div></div>
+        <div class="food-cal">${f.cal}</div>
+      </div>`
+    ).join("");
+  }
+  searchResults.style.display = "block";
+  searchResults.querySelectorAll(".food-item").forEach(el => {
+    el.addEventListener("click", () => {
+      const name = el.dataset.name;
+      selectedFood = FOODS.find(f => f.name === name);
+      qty = 1;
+      renderSelected();
+      searchResults.style.display = "none";
+      searchInput.value = selectedFood.name;
+    });
+  });
+});
+
+function renderSelected() {
+  if (!selectedFood) return;
+  document.getElementById("sel-name").textContent = selectedFood.name;
+  document.getElementById("sel-macro").textContent = `${selectedFood.cal} kcal | P:${selectedFood.protein}g C:${selectedFood.carbs}g F:${selectedFood.fat}g`;
+  document.getElementById("qty-display").textContent = qty;
+  document.getElementById("qty-total").textContent = `= ${Math.round(selectedFood.cal * qty)} kcal`;
+  selectedCard.style.display = "block";
+  logBtn.disabled = false;
+}
+
+document.getElementById("qty-minus").addEventListener("click", () => {
+  if (!selectedFood) return;
+  qty = Math.max(0.5, qty - 0.5);
+  renderSelected();
+});
+document.getElementById("qty-plus").addEventListener("click", () => {
+  if (!selectedFood) return;
+  qty += 0.5;
+  renderSelected();
+});
+
+logBtn.addEventListener("click", () => {
+  if (!selectedFood) return;
+  foodLog.push({...selectedFood, qty, id: Date.now()});
+  saveLog();
+  updateMeter();
+  logBtn.textContent = "✅ Added!";
+  setTimeout(() => { logBtn.textContent = "➕ LOG KARO"; }, 1500);
+  selectedFood = null;
+  qty = 1;
+  selectedCard.style.display = "none";
+  searchInput.value = "";
+  logBtn.disabled = true;
+});
+
+// ── LOG TAB ─────────────────────────────────────────────────────────────────
+function renderLog() {
+  const empty = document.getElementById("log-empty");
+  const items = document.getElementById("log-items");
+  const total = document.getElementById("log-total");
+  const totalVal = document.getElementById("log-total-val");
+  const clearBtn = document.getElementById("clear-log-btn");
+
+  if (!foodLog.length) {
+    empty.style.display = "block";
+    items.innerHTML = "";
+    total.style.display = "none";
+    clearBtn.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  const t = getTotals();
+  items.innerHTML = foodLog.map(item =>
+    `<div class="log-item">
+      <div>
+        <div class="log-name">${item.name}${item.qty!==1?` <span style="color:var(--purple)">×${item.qty}</span>`:""}</div>
+        <div class="log-macro">P:${Math.round(item.protein*item.qty)}g • C:${Math.round(item.carbs*item.qty)}g • F:${Math.round(item.fat*item.qty)}g</div>
+      </div>
+      <div style="display:flex;align-items:center">
+        <div class="log-cal">${Math.round(item.cal*item.qty)}</div>
+        <button class="log-del" data-id="${item.id}">🗑</button>
+      </div>
+    </div>`
+  ).join("");
+  total.style.display = "flex";
+  totalVal.textContent = Math.round(t.cal) + " kcal";
+  clearBtn.style.display = "block";
+  items.querySelectorAll(".log-del").forEach(btn => {
+    btn.addEventListener("click", () => {
+      foodLog = foodLog.filter(i => i.id !== +btn.dataset.id);
+      saveLog();
+      updateMeter();
+      renderLog();
+    });
+  });
+}
+
+document.getElementById("clear-log-btn").addEventListener("click", () => {
+  if (confirm("Sab log clear karna chahte ho?")) {
+    foodLog = [];
+    saveLog();
+    updateMeter();
+    renderLog();
+  }
+});
+
+// ── SETTINGS ────────────────────────────────────────────────────────────────
+const apiInput = document.getElementById("api-input");
+apiInput.value = localStorage.getItem("anthropic_key") || "";
+document.getElementById("save-api-btn").addEventListener("click", () => {
+  const key = apiInput.value.trim();
+  localStorage.setItem("anthropic_key", key);
+  const status = document.getElementById("api-status");
+  status.style.color = "#4ade80";
+  status.textContent = key ? "✅ Key save ho gayi!" : "❌ Key hata di";
+  setTimeout(() => status.textContent = "", 2500);
+});
+
+// ── SCAN TAB ────────────────────────────────────────────────────────────────
+const uploadZone = document.getElementById("upload-zone");
+const fileInput = document.getElementById("file-input");
+const scanBtns = document.getElementById("scan-btns");
+const analyzeBtn = document.getElementById("analyze-btn");
+
+uploadZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  resetScan();
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imageBase64 = ev.target.result;
+    uploadZone.innerHTML = `<img src="${imageBase64}" alt="meal"/>`;
+    uploadZone.classList.add("has-image");
+    scanBtns.style.display = "flex";
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById("change-photo-btn").addEventListener("click", () => {
+  resetScan();
+  fileInput.click();
+});
+
+function resetScan() {
+  imageBase64 = null;
+  scanResult = null;
+  addedScanIds = new Set();
+  uploadZone.innerHTML = `<div id="upload-placeholder">
+    <div class="icon">📸</div>
+    <div class="title">Meal ki photo daalo</div>
+    <div class="sub">Tap karke gallery se choose karo<br>ya camera use karo</div>
+  </div>`;
+  uploadZone.classList.remove("has-image");
+  scanBtns.style.display = "none";
+  document.getElementById("scan-loading").style.display = "none";
+  document.getElementById("scan-error").style.display = "none";
+  document.getElementById("scan-result").style.display = "none";
+  document.getElementById("no-api-warn").style.display = "none";
+}
+
+analyzeBtn.addEventListener("click", async () => {
+  const apiKey = localStorage.getItem("anthropic_key");
+  if (!apiKey) {
+    document.getElementById("no-api-warn").style.display = "block";
+    return;
+  }
+  if (!imageBase64) return;
+
+  document.getElementById("scan-loading").style.display = "block";
+  document.getElementById("scan-error").style.display = "none";
+  document.getElementById("scan-result").style.display = "none";
+  document.getElementById("no-api-warn").style.display = "none";
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = "🔍 Analyzing...";
+
+  try {
+    const b64 = imageBase64.split(",")[1];
+    const mime = imageBase64.split(";")[0].split(":")[1];
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: `You are a nutritionist specializing in Indian cuisine. Analyze food images and respond ONLY with valid JSON, no markdown, no backticks. Format:
+{"meal_name":"string","items":[{"name":"string","quantity":"string","cal":number,"protein":number,"carbs":number,"fat":number}],"total":{"cal":number,"protein":number,"carbs":number,"fat":number},"confidence":"high|medium|low","note":"string in Hinglish about this meal for weight gain goal"}`,
+        messages: [{
+          role: "user",
+          content: [
+            {type:"image",source:{type:"base64",media_type:mime,data:b64}},
+            {type:"text",text:"Is meal ki photo dekho. Har food item identify karo aur nutrition batao. JSON mein respond karo sirf."}
+          ]
+        }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const raw = data.content?.find(b=>b.type==="text")?.text || "";
+    const clean = raw.replace(/```json|```/g,"").trim();
+    scanResult = JSON.parse(clean);
+    renderScanResult();
+  } catch (err) {
+    document.getElementById("scan-error").textContent = "⚠️ " + (err.message || "Analysis fail ho gayi. Dobara try karo.");
+    document.getElementById("scan-error").style.display = "block";
+  } finally {
+    document.getElementById("scan-loading").style.display = "none";
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = "🔍 ANALYZE KARO";
+  }
+});
+
+function renderScanResult() {
+  if (!scanResult) return;
+  const r = scanResult;
+  document.getElementById("result-meal-name").textContent = r.meal_name;
+  const conf = document.getElementById("conf-badge");
+  conf.textContent = (r.confidence||"").toUpperCase();
+  conf.className = "confidence-badge conf-" + (r.confidence||"medium");
+  document.getElementById("t-cal").textContent = r.total?.cal;
+  document.getElementById("t-pro").textContent = r.total?.protein + "g";
+  document.getElementById("t-carb").textContent = r.total?.carbs + "g";
+  document.getElementById("t-fat").textContent = r.total?.fat + "g";
+  document.getElementById("result-note").textContent = r.note ? "💬 " + r.note : "";
+  document.getElementById("result-note").style.display = r.note ? "block" : "none";
+
+  const itemsEl = document.getElementById("result-items");
+  itemsEl.innerHTML = (r.items||[]).map((item,idx) =>
+    `<div class="result-item ${addedScanIds.has(idx)?"added":""}" id="ri-${idx}">
+      <div style="flex:1">
+        <div class="ri-name">${item.name}</div>
+        <div class="ri-qty">${item.quantity}</div>
+        <div class="ri-macro">P:${item.protein}g • C:${item.carbs}g • F:${item.fat}g</div>
+      </div>
+      <div class="ri-right">
+        <div class="ri-cal">${item.cal}</div>
+        <button class="add-item-btn ${addedScanIds.has(idx)?"done":""}" data-idx="${idx}">
+          ${addedScanIds.has(idx)?"✓ Done":"+ Add"}
+        </button>
+      </div>
+    </div>`
+  ).join("");
+
+  itemsEl.querySelectorAll(".add-item-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = +btn.dataset.idx;
+      if (addedScanIds.has(idx)) return;
+      const item = r.items[idx];
+      addScanItem(item, idx);
+    });
+  });
+
+  const addAllBtn = document.getElementById("add-all-btn");
+  if ((r.items||[]).length > 1) {
+    addAllBtn.style.display = "block";
+    addAllBtn.textContent = `➕ SAB LOG KARO (${r.total?.cal} kcal)`;
+    addAllBtn.onclick = () => {
+      r.items.forEach((item,idx) => { if(!addedScanIds.has(idx)) addScanItem(item, idx); });
+    };
+  } else {
+    addAllBtn.style.display = "none";
+  }
+
+  checkAllAdded();
+  document.getElementById("scan-result").style.display = "block";
+}
+
+function addScanItem(item, idx) {
+  foodLog.push({
+    name: "📷 " + item.name + " (" + item.quantity + ")",
+    cal: item.cal, protein: item.protein, carbs: item.carbs, fat: item.fat,
+    qty: 1, id: Date.now() + idx
+  });
+  saveLog();
+  updateMeter();
+  addedScanIds.add(idx);
+  const el = document.getElementById("ri-"+idx);
+  if (el) {
+    el.classList.add("added");
+    const btn = el.querySelector(".add-item-btn");
+    if (btn) { btn.textContent = "✓ Done"; btn.classList.add("done"); }
+  }
+  checkAllAdded();
+}
+
+function checkAllAdded() {
+  if (!scanResult) return;
+  const allDone = scanResult.items && addedScanIds.size >= scanResult.items.length;
+  document.getElementById("all-done").style.display = allDone ? "block" : "none";
+  const addAllBtn = document.getElementById("add-all-btn");
+  if (allDone) addAllBtn.style.display = "none";
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+updateMeter();
+</script>
+</body>
+</html>
